@@ -1,0 +1,4 @@
+import { createClient } from "@/lib/supabase/client";
+export async function blockUser(blockedId:string){const s=createClient();const {data:{user}}=await s.auth.getUser();if(!user||user.id===blockedId)return;const {error}=await s.from('blocks').insert({blocker_id:user.id,blocked_id:blockedId});if(error)throw error}
+export async function unblockUser(blockedId:string){const s=createClient();const {data:{user}}=await s.auth.getUser();if(!user)return;const {error}=await s.from('blocks').delete().eq('blocker_id',user.id).eq('blocked_id',blockedId);if(error)throw error}
+export async function reportUser(reportedId:string,reason:string){const s=createClient();const {data:{user}}=await s.auth.getUser();if(!user)throw new Error('Please sign in first.');const {error}=await s.from('reports').insert({reporter_id:user.id,reported_user_id:reportedId,reason});if(error)throw error}
