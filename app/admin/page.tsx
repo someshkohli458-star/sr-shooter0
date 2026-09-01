@@ -14,10 +14,9 @@ export default function AdminPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
-      const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
-      const isAdmin = profile?.role === "admin" || profile?.role === "owner";
-      setAllowed(isAdmin);
-      if (!isAdmin) { setLoading(false); return; }
+      const { data: isAdmin, error: accessError } = await supabase.rpc("is_admin");
+      if (accessError || !isAdmin) { setLoading(false); return; }
+      setAllowed(true);
       const [{ count: users }, { count: posts }, { count: reports }, { count: communities }] = await Promise.all([
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase.from("posts").select("id", { count: "exact", head: true }),
@@ -30,12 +29,10 @@ export default function AdminPage() {
     load();
   }, []);
 
-  if (loading) return <main className="shell"><div className="panel">Loading admin console…</div></main>;
+  if (loading) return <main className="shell"><div className="panel">Checking admin access…</div></main>;
   if (!allowed) return <main className="shell"><Link href="/" className="backLink"><ArrowLeft size={16}/> Home</Link><section className="panel emptyState"><Shield size={30}/><b>Admin access required.</b><span>This area is restricted to authorized administrators.</span></section></main>;
 
-  const cards = [
-    ["Users", stats.users, Users], ["Posts", stats.posts, FileText], ["Open reports", stats.reports, AlertTriangle], ["Nexuses", stats.communities, Activity]
-  ];
+  const cards = [["Users", stats.users, Users], ["Posts", stats.posts, FileText], ["Open reports", stats.reports, AlertTriangle], ["Nexuses", stats.communities, Activity]];
   return <main className="shell adminShell">
     <header className="topbar"><Link href="/" className="backLink"><ArrowLeft size={16}/> Home</Link><span className="adminBadge"><Shield size={15}/> ADMIN CONSOLE</span></header>
     <section className="pageHeading"><div className="eyebrow">CONTROL CENTER</div><h1>Command the network.</h1><p>Moderation, activity and platform health in one place.</p></section>
