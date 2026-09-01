@@ -1,31 +1,7 @@
 import Link from "next/link";
-import { ArrowLeft, Code2, Github, Mail, Sparkles } from "lucide-react";
+import { ArrowLeft, Code2, Instagram, Mail, Github, Sparkles } from "lucide-react";
 
 export default function DeveloperPage() {
-  return (
-    <main className="devPage">
-      <header className="devNav">
-        <Link href="/prank" className="back"><ArrowLeft size={17} /> AURA LAB</Link>
-        <span className="badge"><Sparkles size={14} /> DEVELOPER</span>
-      </header>
-      <section className="devHero">
-        <div className="eyebrow">SYSTEM CREATOR</div>
-        <h1>Built by <span>SR Shooter0</span>.</h1>
-        <p>A modern, responsive browser experience inspired by retro cyber interfaces — rebuilt with original visuals and harmless simulations.</p>
-        <div className="devActions">
-          <a href="https://github.com/someshkohli458-star" target="_blank" rel="noreferrer"><Github size={17}/> GitHub</a>
-          <a href="mailto:contact@example.com"><Mail size={17}/> Contact</a>
-        </div>
-      </section>
-      <section className="devGrid">
-        <article><Code2 size={21}/><b>Developer</b><span>SR Shooter0</span></article>
-        <article><Sparkles size={21}/><b>Stack</b><span>Next.js · Supabase · Vercel</span></article>
-        <article><span className="dot"/><b>Design</b><span>Retro cyber · Mobile first</span></article>
-      </section>
-      <p className="note">Developer contact details can be changed later without changing the site structure.</p>
-      <style jsx>{`
-        .devPage{min-height:100vh;background:#020602;color:#39ff14;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;padding:0 7vw 70px}.devNav{height:70px;border-bottom:1px solid #124512;display:flex;align-items:center;justify-content:space-between}.back{color:#39ff14;text-decoration:none;display:flex;align-items:center;gap:8px}.badge{font-size:10px;border:1px solid #1d7c1d;padding:7px 10px;display:flex;gap:7px;align-items:center}.devHero{max-width:850px;padding:12vh 0 7vh}.eyebrow{font-size:11px;letter-spacing:3px;opacity:.65}.devHero h1{font-size:clamp(42px,8vw,88px);line-height:.98;margin:18px 0}.devHero h1 span{text-shadow:0 0 18px rgba(57,255,20,.35)}.devHero p{max-width:650px;color:#9be890;line-height:1.7;font-size:15px}.devActions{display:flex;gap:12px;margin-top:30px;flex-wrap:wrap}.devActions a{color:#001000;background:#39ff14;text-decoration:none;padding:10px 15px;display:flex;gap:8px;align-items:center;font-weight:800;font-size:12px}.devActions a+ a{background:transparent;color:#39ff14;border:1px solid #39ff14}.devGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:900px}.devGrid article{border:1px solid #155915;background:#030903;padding:22px;display:flex;flex-direction:column;gap:9px}.devGrid b{font-size:13px}.devGrid span:not(.dot){font-size:11px;color:#9be890}.dot{width:11px;height:11px;background:#39ff14;box-shadow:0 0 14px #39ff14}.note{margin-top:30px;font-size:10px;color:#5fb957}@media(max-width:700px){.devPage{padding:0 18px 60px}.devNav{height:58px}.devHero{padding:9vh 0 6vh}.devHero p{font-size:13px}.devGrid{grid-template-columns:1fr}.devActions a{flex:1;justify-content:center}}
-      `}</style>
-    </main>
-  );
+  return <main className="devPage"><header className="devNav"><Link href="/prank" className="back"><ArrowLeft size={17}/> AURA LAB</Link><span className="badge"><Sparkles size={14}/> DEVELOPER</span></header><section className="devHero"><div className="eyebrow">SYSTEM CREATOR</div><h1>Built by <span>Somesh Koli</span>.</h1><p>A modern responsive browser experience inspired by retro cyber interfaces, rebuilt with original visuals and harmless simulations.</p><div className="devActions"><a href="https://github.com/someshkohli458-star" target="_blank" rel="noreferrer"><Github size={17}/> GitHub</a><a href="https://instagram.com/offx.somesh" target="_blank" rel="noreferrer"><Instagram size={17}/> @offx.somesh</a><a href="https://instagram.com/developer.somesh" target="_blank" rel="noreferrer"><Instagram size={17}/> @developer.somesh</a><a href="mailto:someshkoli442288@gmail.com"><Mail size={17}/> Email</a></div></section><section className="devGrid"><article><Code2 size={21}/><b>Developer</b><span>Somesh Koli</span></article><article><Sparkles size={21}/><b>Stack</b><span>Next.js · Supabase · Vercel</span></article><article><span className="dot"/><b>Design</b><span>Retro cyber · Mobile first</span></article></section><style jsx>{`.devPage{min-height:100vh;background:#020602;color:#39ff14;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;padding:0 7vw 70px}.devNav{height:70px;border-bottom:1px solid #124512;display:flex;align-items:center;justify-content:space-between}.back{color:#39ff14;text-decoration:none;display:flex;align-items:center;gap:8px}.badge{font-size:10px;border:1px solid #1d7c1d;padding:7px 10px;display:flex;gap:7px;align-items:center}.devHero{max-width:850px;padding:12vh 0 7vh}.eyebrow{font-size:11px;letter-spacing:3px;opacity:.65}.devHero h1{font-size:clamp(42px,8vw,88px);line-height:.98;margin:18px 0}.devHero h1 span{text-shadow:0 0 18px rgba(57,255,20,.35)}.devHero p{max-width:650px;color:#9be890;line-height:1.7;font-size:15px}.devActions{display:flex;gap:10px;margin-top:30px;flex-wrap:wrap}.devActions a{color:#001000;background:#39ff14;text-decoration:none;padding:10px 15px;display:flex;gap:8px;align-items:center;font-weight:800;font-size:12px}.devActions a:nth-child(n+2){background:transparent;color:#39ff14;border:1px solid #39ff14}.devGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:900px}.devGrid article{border:1px solid #155915;background:#030903;padding:22px;display:flex;flex-direction:column;gap:9px}.devGrid b{font-size:13px}.devGrid span:not(.dot){font-size:11px;color:#9be890}.dot{width:11px;height:11px;background:#39ff14;box-shadow:0 0 14px #39ff14}@media(max-width:700px){.devPage{padding:0 18px 60px}.devNav{height:58px}.devHero{padding:9vh 0 6vh}.devHero p{font-size:13px}.devGrid{grid-template-columns:1fr}.devActions a{flex:1;justify-content:center}}
+`}</style></main>;
 }
