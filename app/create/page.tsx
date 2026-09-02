@@ -13,6 +13,7 @@ export default function CreatePage() {
   const [enhanced, setEnhanced] = useState(false);
   const [reference, setReference] = useState<string | null>(null);
   const [status, setStatus] = useState("");
+  const [busy, setBusy] = useState(false);
 
   function enhancePrompt() {
     if (!prompt.trim()) return;
@@ -28,9 +29,27 @@ export default function CreatePage() {
     setStatus(`Reference selected: ${file.name}`);
   }
 
-  function generate() {
-    if (!prompt.trim()) return;
-    setStatus(`${mode === "image" ? "Image" : "Video"} request prepared • ${aspect} • ${quality}${mode === "video" ? ` • ${duration}` : ""}`);
+  async function generate() {
+    if (!prompt.trim() || busy) return;
+    setBusy(true);
+    setStatus("Checking credits and creating generation...");
+    try {
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: mode, prompt: prompt.trim(), aspect, quality, duration }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setStatus(data.error || "Generation could not be started.");
+        return;
+      }
+      setStatus(`${mode === "image" ? "Image" : "Video"} request created • credits reserved • ID ${data.generation?.id?.slice(0, 8) || "ready"}`);
+    } catch {
+      setStatus("Network error. Please try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -47,7 +66,7 @@ export default function CreatePage() {
           <div className="mb-5 text-xs font-bold uppercase tracking-[.2em] text-white/40">Create</div>
           <button onClick={() => { setMode("image"); setStatus(""); }} className={`mb-2 flex w-full items-center gap-3 rounded-2xl p-4 text-left text-sm ${mode === "image" ? "bg-white text-black" : "text-white/60 hover:bg-white/5"}`}><ImageIcon size={18}/> AI Image</button>
           <button onClick={() => { setMode("video"); setStatus(""); }} className={`flex w-full items-center gap-3 rounded-2xl p-4 text-left text-sm ${mode === "video" ? "bg-white text-black" : "text-white/60 hover:bg-white/5"}`}><Clapperboard size={18}/> AI Video</button>
-          <div className="mt-8 border-t border-white/10 pt-5 text-[11px] leading-5 text-white/35">Provider integration comes after the UI layer. This step prepares generation requests without sending them to an external AI service.</div>
+          <div className="mt-8 border-t border-white/10 pt-5 text-[11px] leading-5 text-white/35">Generation requests now use the authenticated API and credit controls. External AI provider output will be connected next.</div>
         </aside>
 
         <section className="rounded-3xl border border-white/10 bg-white/[.025] p-5 md:p-8">
@@ -68,7 +87,7 @@ export default function CreatePage() {
               <div><label className="text-[10px] uppercase tracking-[.18em] text-white/35">Aspect Ratio</label><div className="mt-2 grid grid-cols-3 gap-2">{["1:1","16:9","9:16"].map(x=><button key={x} onClick={()=>setAspect(x)} className={`rounded-xl border p-3 text-xs ${aspect===x?"border-violet-400/60 bg-violet-400/10 text-violet-200":"border-white/10 text-white/40"}`}>{x}</button>)}</div></div>
               <div><label className="text-[10px] uppercase tracking-[.18em] text-white/35">Quality</label><div className="mt-2 grid grid-cols-2 gap-2">{["HD","Ultra"].map(x=><button key={x} onClick={()=>setQuality(x)} className={`rounded-xl border p-3 text-xs ${quality===x?"border-violet-400/60 bg-violet-400/10 text-violet-200":"border-white/10 text-white/40"}`}>{x}</button>)}</div></div>
               {mode === "video" && <div><label className="text-[10px] uppercase tracking-[.18em] text-white/35">Duration</label><div className="mt-2 grid grid-cols-3 gap-2">{["5s","10s","15s"].map(x=><button key={x} onClick={()=>setDuration(x)} className={`rounded-xl border p-3 text-xs ${duration===x?"border-violet-400/60 bg-violet-400/10 text-violet-200":"border-white/10 text-white/40"}`}>{x}</button>)}</div></div>}
-              <button onClick={generate} disabled={!prompt.trim()} className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-500 to-fuchsia-500 px-5 py-4 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-30"><Sparkles size={16}/> Generate {mode === "image" ? "Image" : "Video"}</button>
+              <button onClick={generate} disabled={!prompt.trim() || busy} className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-500 to-fuchsia-500 px-5 py-4 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-30"><Sparkles size={16}/> {busy ? "Generating..." : `Generate ${mode === "image" ? "Image" : "Video"}`}</button>
               {status && <div className="flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/5 p-3 text-[11px] text-emerald-200"><Check size={14}/>{status}</div>}
             </div>
           </div>
