@@ -72,7 +72,6 @@ export async function POST(request: Request) {
     } else {
       response = await fetch("https://api.openai.com/v1/images/generations", { method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "gpt-image-2", prompt, size: imageSize(aspect), quality: quality === "Ultra" ? "high" : "medium", output_format: "png" }) });
     }
-
     const result = await response.json().catch(() => ({}));
     const b64 = result?.data?.[0]?.b64_json;
     if (!response.ok || !b64) throw new Error(result?.error?.message || "Image provider failed");
