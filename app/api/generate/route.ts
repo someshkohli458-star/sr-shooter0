@@ -7,8 +7,8 @@ function videoSeconds(duration: string) { if (duration === "10s") return "8"; if
 function videoSize(aspect: string) { return aspect === "9:16" ? "720x1280" : "1280x720"; }
 function videoCost(duration: string) { if (duration === "10s") return 5; if (duration === "15s") return 7; return 3; }
 
-async function refund(supabase: Awaited<ReturnType<typeof createClient>>, userId: string, amount: number) {
-  await supabase.rpc("refund_createx_credit", { p_user_id: userId, p_amount: amount });
+async function refund(supabase: Awaited<ReturnType<typeof createClient>>, userId: string, amount: number, generationId: string) {
+  await supabase.rpc("refund_createx_credit", { p_user_id: userId, p_amount: amount, p_generation_id: generationId });
 }
 
 function dataUrlToFile(dataUrl: string): File {
@@ -30,7 +30,6 @@ export async function POST(request: Request) {
   const type = body.type === "video" ? "video" : "image";
   const prompt = String(body.prompt || "").trim();
   if (!prompt) return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
-
   const aspect = String(body.aspect || "16:9");
   const quality = String(body.quality || "HD");
   const duration = String(body.duration || "5s");
@@ -41,7 +40,7 @@ export async function POST(request: Request) {
   const { data: generation, error: insertError } = await supabase.from("createx_generations").insert({ user_id: user.id, type, prompt, settings, status: "pending" }).select("id,type,prompt,status,settings,created_at").single();
   if (insertError) return NextResponse.json({ error: insertError.message }, { status: 400 });
 
-  const { data: remaining, error: creditError } = await supabase.rpc("consume_createx_credit", { p_user_id: user.id, p_amount: cost });
+  const { data: remaining, error: creditError } = await supabase.rpc("consume_createx_credit", { p_user_id: user.id, p_amount: cost, p_generation_id: generation.id });
   if (creditError) {
     await supabase.from("createx_generations").delete().eq("id", generation.id).eq("user_id", user.id);
     return NextResponse.json({ error: creditError.message.includes("Insufficient") ? "Insufficient credits" : creditError.message, code: "INSUFFICIENT_CREDITS" }, { status: 402 });
@@ -49,18 +48,14 @@ export async function POST(request: Request) {
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    await refund(supabase, user.id, cost);
+    await refund(supabase, user.id, cost, generation.id);
     await supabase.from("createx_generations").update({ status: "failed" }).eq("id", generation.id).eq("user_id", user.id);
     return NextResponse.json({ error: "OPENAI_API_KEY is not configured" }, { status: 503 });
   }
 
   try {
     if (type === "video") {
-      const response = await fetch("https://api.openai.com/v1/videos", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "sora-2", prompt, seconds: videoSeconds(duration), size: videoSize(aspect) }),
-      });
+      const response = await fetch("https://api.openai.com/v1/videos", { method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "sora-2", prompt, seconds: videoSeconds(duration), size: videoSize(aspect) }) });
       const result = await response.json().catch(() => ({}));
       if (!response.ok || !result?.id) throw new Error(result?.error?.message || "Video provider failed");
       const nextSettings = { ...settings, provider: "openai", provider_id: result.id, provider_status: result.status || "queued" };
@@ -72,23 +67,10 @@ export async function POST(request: Request) {
     let response: Response;
     if (referenceData) {
       const form = new FormData();
-      form.append("model", "gpt-image-2");
-      form.append("prompt", prompt);
-      form.append("size", imageSize(aspect));
-      form.append("quality", quality === "Ultra" ? "high" : "medium");
-      form.append("output_format", "png");
-      form.append("image[]", dataUrlToFile(referenceData));
-      response = await fetch("https://api.openai.com/v1/images/edits", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}` },
-        body: form,
-      });
+      form.append("model", "gpt-image-2"); form.append("prompt", prompt); form.append("size", imageSize(aspect)); form.append("quality", quality === "Ultra" ? "high" : "medium"); form.append("output_format", "png"); form.append("image[]", dataUrlToFile(referenceData));
+      response = await fetch("https://api.openai.com/v1/images/edits", { method: "POST", headers: { Authorization: `Bearer ${apiKey}` }, body: form });
     } else {
-      response = await fetch("https://api.openai.com/v1/images/generations", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "gpt-image-2", prompt, size: imageSize(aspect), quality: quality === "Ultra" ? "high" : "medium", output_format: "png" }),
-      });
+      response = await fetch("https://api.openai.com/v1/images/generations", { method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "gpt-image-2", prompt, size: imageSize(aspect), quality: quality === "Ultra" ? "high" : "medium", output_format: "png" }) });
     }
 
     const result = await response.json().catch(() => ({}));
@@ -102,7 +84,7 @@ export async function POST(request: Request) {
     if (updateError) throw updateError;
     return NextResponse.json({ generation: completed, provider: "openai", credits: remaining });
   } catch (error) {
-    await refund(supabase, user.id, cost);
+    await refund(supabase, user.id, cost, generation.id);
     await supabase.from("createx_generations").update({ status: "failed", updated_at: new Date().toISOString() }).eq("id", generation.id).eq("user_id", user.id);
     return NextResponse.json({ error: error instanceof Error ? error.message : "Generation request failed" }, { status: 502 });
   }
