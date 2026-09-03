@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { ArrowUpRight, BarChart3, Bot, Code2, ExternalLink, Gauge, ImageIcon, LayoutDashboard, MessageSquare, Settings2, ShieldCheck, Sparkles, Users, Video } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
-const cards = [
+const cards: { title: string; href: string; desc: string; icon: LucideIcon }[] = [
   { title: "Overview", href: "/admin", desc: "System health, usage and operational snapshot.", icon: LayoutDashboard },
   { title: "Feature Manager", href: "/admin/features", desc: "Enable, disable and manage product features.", icon: Settings2 },
   { title: "Website Control", href: "/admin/website-control", desc: "Control which sections are visible to visitors.", icon: Gauge },
@@ -12,11 +13,11 @@ const cards = [
   { title: "Public Preview", href: "/", desc: "Open the live CreateX AI experience.", icon: ExternalLink },
 ];
 
-const metrics = [
-  ["AI Images", "10 / day", "Free allowance", ImageIcon],
-  ["AI Videos", "10 / day", "Free allowance", Video],
-  ["AI Chat", "Unlimited", "Available", MessageSquare],
-  ["Code Studio", "Active", "Sandbox preview", Code2],
+const metrics: { title: string; value: string; note: string; icon: LucideIcon }[] = [
+  { title: "AI Images", value: "10 / day", note: "Free allowance", icon: ImageIcon },
+  { title: "AI Videos", value: "10 / day", note: "Free allowance", icon: Video },
+  { title: "AI Chat", value: "Unlimited", note: "Available", icon: MessageSquare },
+  { title: "Code Studio", value: "Active", note: "Sandbox preview", icon: Code2 },
 ];
 
 export default function Admin() {
@@ -36,10 +37,14 @@ export default function Admin() {
         </header>
 
         <section className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {metrics.map(([title, value, note, Icon]) => {
-            const MetricIcon = Icon as typeof Sparkles;
-            return <div key={String(title)} className="rounded-3xl border border-white/10 bg-white/[0.035] p-4 sm:p-5"><MetricIcon size={18} className="text-violet-300" /><div className="mt-4 text-xl font-bold sm:text-2xl">{value}</div><div className="mt-1 text-xs font-semibold text-white/80">{title}</div><div className="mt-1 text-[11px] text-white/35">{note}</div></div>;
-          })}
+          {metrics.map(({ title, value, note, icon: MetricIcon }) => (
+            <div key={title} className="rounded-3xl border border-white/10 bg-white/[0.035] p-4 sm:p-5">
+              <MetricIcon size={18} className="text-violet-300" />
+              <div className="mt-4 text-xl font-bold sm:text-2xl">{value}</div>
+              <div className="mt-1 text-xs font-semibold text-white/80">{title}</div>
+              <div className="mt-1 text-[11px] text-white/35">{note}</div>
+            </div>
+          ))}
         </section>
 
         <section className="mt-5 grid gap-4 lg:grid-cols-[1.35fr_.65fr]">
