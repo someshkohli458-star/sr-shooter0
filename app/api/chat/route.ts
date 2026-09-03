@@ -32,7 +32,6 @@ export async function GET(request: Request) {
   if (!user) return NextResponse.json({ error: "Please sign in first." }, { status: 401 });
   const url = new URL(request.url);
   const chatId = url.searchParams.get("chatId");
-
   if (chatId) {
     const { data: chat } = await supabase.from("createx_chats").select("id,title,created_at,updated_at").eq("id", chatId).eq("user_id", user.id).maybeSingle();
     if (!chat) return NextResponse.json({ error: "Chat not found." }, { status: 404 });
@@ -40,7 +39,6 @@ export async function GET(request: Request) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ chat, messages: messages || [] });
   }
-
   const { data: chats, error } = await supabase.from("createx_chats").select("id,title,created_at,updated_at").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(100);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ chats: chats || [] });
@@ -61,8 +59,7 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   const { supabase, user } = await getUser();
   if (!user) return NextResponse.json({ error: "Please sign in first." }, { status: 401 });
-  const url = new URL(request.url);
-  const chatId = url.searchParams.get("chatId") || "";
+  const chatId = new URL(request.url).searchParams.get("chatId") || "";
   if (!chatId) return NextResponse.json({ error: "Chat id is required." }, { status: 400 });
   const { error } = await supabase.from("createx_chats").delete().eq("id", chatId).eq("user_id", user.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -73,6 +70,7 @@ export async function POST(request: Request) {
   const { supabase, user } = await getUser();
   if (!user) return NextResponse.json({ error: "Please sign in first." }, { status: 401 });
   if (!process.env.OPENAI_API_KEY) return NextResponse.json({ error: "AI is not configured yet. Add OPENAI_API_KEY in Vercel." }, { status: 503 });
+
   const form = await request.formData();
   const message = String(form.get("message") || "").trim().slice(0, 12000);
   const mode = String(form.get("mode") || "general");
@@ -123,9 +121,17 @@ export async function POST(request: Request) {
   if (userSaveError) return NextResponse.json({ error: userSaveError.message }, { status: 500 });
   await supabase.from("createx_chats").update({ updated_at: new Date().toISOString() }).eq("id", chatId).eq("user_id", user.id);
 
-  const instructions = `You are CreateX AI, a multimodal assistant inside a creative workspace. Mode: ${mode}. You can discuss ideas, analyze images/documents, inspect source code, generate new code, debug and refactor code, explain files, and propose precise edits. For code tasks, return complete copy-pasteable code when appropriate and clearly mark changed files. For ZIP projects, treat extracted source listing/content as the user's project and help modify it. Never claim you executed or tested code unless an execution tool actually did so. Be concise but useful.`;
+  const instructions = `You are CreateX AI, a multimodal assistant inside a creative workspace. Mode: ${mode}. You can discuss ideas, analyze images/documents, inspect source code, generate new code, debug and refactor code, explain files, and propose precise edits. You may use web search for current information and Code Interpreter for calculations, data analysis, and safe sandboxed Python execution. For code tasks, return complete copy-pasteable code when appropriate and clearly mark changed files. For ZIP projects, treat extracted source listing/content as the user's project and help modify it. Never claim you executed or tested code unless the Code Interpreter tool actually did so. Be concise but useful.`;
   const input = [...history, { role: "user", content }];
-  const response = await fetch("https://api.openai.com/v1/responses", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.OPENAI_API_KEY}` }, body: JSON.stringify({ model: MODEL, instructions, input, max_output_tokens: 5000 }) });
+  const tools: any[] = [
+    { type: "web_search" },
+    { type: "code_interpreter", container: { type: "auto" } },
+  ];
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
+    body: JSON.stringify({ model: MODEL, instructions, input, tools, tool_choice: "auto", include: ["web_search_call.action.sources", "code_interpreter_call.outputs"], max_output_tokens: 5000 }),
+  });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) return NextResponse.json({ error: data?.error?.message || "AI request failed." }, { status: response.status >= 500 ? 502 : 400 });
   const text = data?.output_text || data?.output?.flatMap((item: any) => item.content || []).filter((part: any) => part.type === "output_text").map((part: any) => part.text).join("\n") || "I couldn't generate a response.";
