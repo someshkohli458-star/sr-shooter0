@@ -2,58 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowRight, Eye, EyeOff, Sparkles } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Image as ImageIcon, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
+const art = "https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=1200&q=85";
+
 export default function AuthPage() {
-  const [signup, setSignup] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) window.location.href = "/dashboard";
-    });
-  }, []);
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true); setMessage("");
-    const supabase = createClient();
-    if (signup) {
-      const { error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: name } } });
-      if (error) setMessage(error.message);
-      else setMessage("Account created. Check your email if confirmation is enabled.");
-    } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) setMessage(error.message);
-      else window.location.href = "/dashboard";
-    }
-    setLoading(false);
-  }
-
-  return (
-    <main className="min-h-screen bg-[#07070a] text-white">
-      <div className="mx-auto grid min-h-screen max-w-6xl items-center gap-10 px-5 py-10 md:grid-cols-2 md:px-8">
-        <section className="hidden md:block"><Link href="/" className="inline-flex items-center gap-3 text-sm text-white/70"><span className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-cyan-400"><Sparkles size={19}/></span><span className="font-bold">CreateX AI</span></Link><h1 className="mt-12 text-6xl font-black tracking-[-.05em]">Your ideas.<br/><span className="bg-gradient-to-r from-violet-300 via-fuchsia-300 to-cyan-300 bg-clip-text text-transparent">Your studio.</span></h1><p className="mt-6 max-w-md text-base leading-7 text-white/40">Sign in to keep your creations, credits and generation history together in one creative workspace.</p></section>
-        <section className="mx-auto w-full max-w-md rounded-[30px] border border-white/10 bg-white/[.035] p-6 shadow-2xl shadow-violet-950/20 backdrop-blur md:p-8">
-          <div className="mb-8 md:hidden"><Link href="/" className="flex items-center gap-2 font-bold"><span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-violet-500 to-cyan-400"><Sparkles size={17}/></span>CreateX AI</Link></div>
-          <div className="text-xs font-bold uppercase tracking-[.22em] text-violet-300">{signup ? "Create account" : "Welcome back"}</div><h2 className="mt-3 text-3xl font-black">{signup ? "Start creating." : "Continue creating."}</h2><p className="mt-2 text-sm text-white/40">{signup ? "Get started with your creative workspace." : "Sign in to access your studio."}</p>
-          <form onSubmit={submit} className="mt-7 space-y-4">
-            {signup && <input required value={name} onChange={e=>setName(e.target.value)} type="text" placeholder="Your name" className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3.5 text-sm outline-none focus:border-violet-400/50"/>}
-            <input required value={email} onChange={e=>setEmail(e.target.value)} type="email" placeholder="Email address" className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3.5 text-sm outline-none focus:border-violet-400/50"/>
-            <div className="relative"><input required minLength={6} value={password} onChange={e=>setPassword(e.target.value)} type={showPassword ? "text" : "password"} placeholder="Password (6+ characters)" className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3.5 pr-12 text-sm outline-none focus:border-violet-400/50"/><button type="button" onClick={()=>setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30">{showPassword ? <EyeOff size={17}/> : <Eye size={17}/>}</button></div>
-            <button disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3.5 text-sm font-bold text-black disabled:opacity-50">{loading ? "Please wait..." : signup ? "Create account" : "Sign in"}<ArrowRight size={16}/></button>
-          </form>
-          {message && <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white/70">{message}</div>}
-          <div className="mt-7 text-center text-xs text-white/35">{signup ? "Already have an account?" : "New to CreateX AI?"} <button onClick={()=>{setSignup(!signup);setMessage("")}} className="font-semibold text-violet-300 hover:text-violet-200">{signup ? "Sign in" : "Create account"}</button></div>
-        </section>
-      </div>
-    </main>
-  );
+  const [signup,setSignup]=useState(false),[showPassword,setShowPassword]=useState(false),[email,setEmail]=useState(""),[password,setPassword]=useState(""),[name,setName]=useState(""),[message,setMessage]=useState(""),[loading,setLoading]=useState(false);
+  useEffect(()=>{createClient().auth.getSession().then(({data})=>{if(data.session)window.location.href="/dashboard"})},[]);
+  async function submit(e:React.FormEvent){e.preventDefault();setLoading(true);setMessage("");const supabase=createClient();if(signup){const {error}=await supabase.auth.signUp({email,password,options:{data:{full_name:name}}});if(error)setMessage(error.message);else setMessage("Account created. Check your email if confirmation is enabled.")}else{const {error}=await supabase.auth.signInWithPassword({email,password});if(error)setMessage(error.message);else window.location.href="/dashboard"}setLoading(false)}
+  return <main className="cx-bg min-h-screen text-white"><div className="mx-auto grid min-h-screen max-w-6xl items-center gap-8 px-5 py-8 md:grid-cols-2 md:px-8"><section className="relative hidden min-h-[620px] overflow-hidden rounded-[36px] border border-white/10 md:block"><img src={art} alt="CreateX creative workspace" className="absolute inset-0 h-full w-full object-cover opacity-55"/><div className="absolute inset-0 bg-gradient-to-t from-[#050507] via-[#050507]/35 to-violet-900/20"/><div className="relative flex h-full flex-col justify-between p-8"><Link href="/" className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-2xl bg-white/10 backdrop-blur"><Sparkles size={19}/></span><span className="font-black">CreateX <span className="text-violet-300">AI</span></span></Link><div><div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/25 px-3 py-1.5 text-[10px] uppercase tracking-[.2em] text-white/65 backdrop-blur"><ImageIcon size={12}/> Creative workspace</div><h1 className="text-6xl font-black leading-[.95] tracking-[-.06em]">Create more.<br/><span className="text-violet-200">Imagine further.</span></h1><p className="mt-5 max-w-md text-sm leading-6 text-white/55">Generate visuals, talk to AI, analyze files and keep your creative work together.</p></div></div></section><section className="mx-auto w-full max-w-md rounded-[32px] border border-white/10 bg-white/[.045] p-6 shadow-2xl shadow-violet-950/25 backdrop-blur-xl md:p-8"><div className="mb-8 md:hidden"><Link href="/" className="flex items-center gap-2 font-black"><span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-violet-500 to-cyan-400"><Sparkles size={17}/></span>CreateX AI</Link></div><div className="text-[10px] font-bold uppercase tracking-[.25em] text-violet-300">{signup?"Create account":"Welcome back"}</div><h2 className="mt-3 text-3xl font-black tracking-tight">{signup?"Start creating.":"Continue creating."}</h2><p className="mt-2 text-sm text-white/40">{signup?"Your AI workspace is ready when you are.":"Sign in to access your studio and creations."}</p><form onSubmit={submit} className="mt-7 space-y-4">{signup&&<input required value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" className="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3.5 text-sm outline-none focus:border-violet-400/50"/>}<input required value={email} onChange={e=>setEmail(e.target.value)} type="email" placeholder="Email address" className="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3.5 text-sm outline-none focus:border-violet-400/50"/><div className="relative"><input required minLength={6} value={password} onChange={e=>setPassword(e.target.value)} type={showPassword?"text":"password"} placeholder="Password (6+ characters)" className="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3.5 pr-12 text-sm outline-none focus:border-violet-400/50"/><button type="button" onClick={()=>setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/35">{showPassword?<EyeOff size={17}/>:<Eye size={17}/>}</button></div><button disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3.5 text-sm font-bold text-black transition hover:bg-violet-100 disabled:opacity-50">{loading?"Please wait…":signup?"Create account":"Sign in"}<ArrowRight size={16}/></button></form>{message&&<div className="mt-4 rounded-2xl border border-violet-400/20 bg-violet-400/5 p-3 text-xs leading-5 text-white/70">{message}</div>}<div className="mt-7 text-center text-xs text-white/35">{signup?"Already have an account?":"New to CreateX AI?"} <button onClick={()=>{setSignup(!signup);setMessage("")}} className="font-semibold text-violet-300 hover:text-white">{signup?"Sign in":"Create account"}</button></div></section></div></main>;
 }
