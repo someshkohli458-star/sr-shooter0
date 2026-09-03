@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, FileCode2, FileUp, Loader2, Menu, Paperclip, Pencil, Plus, Search, Send, Sparkles, Trash2, X, Zap } from "lucide-react";
 
-type Message = { id?: string; role: "user" | "assistant"; content: string; fileName?: string };
+type Message = { id?: string; role: "user" | "assistant"; content: string; fileName?: string; file_name?: string };
 type ChatSummary = { id: string; title: string; created_at: string; updated_at: string };
 type Mode = "general" | "code" | "analyze";
 
@@ -37,7 +37,7 @@ export default function ChatPage() {
     const data = await res.json();
     if (!res.ok) return alert(data.error || "Could not load chat.");
     setChatId(id);
-    setMessages((data.messages || []).map((m: Message) => ({ id: m.id, role: m.role, content: m.content, fileName: m.file_name || undefined })));
+    setMessages((data.messages || []).map((m: Message) => ({ id: m.id, role: m.role, content: m.content, fileName: m.file_name || m.fileName || undefined })));
     setSidebarOpen(false);
   }
 
