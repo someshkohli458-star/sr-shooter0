@@ -3,7 +3,7 @@
 import Link from "next/link";
 import JSZip from "jszip";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, FileCode2, FilePlus2, FolderArchive, Play, Save, Sparkles, Terminal, Trash2, Wand2, X } from "lucide-react";
+import { ArrowLeft, FileCode2, FilePlus2, FolderArchive, Play, Save, Sparkles, Terminal, Trash2, Wand2, X, Pencil, Check } from "lucide-react";
 
 type ProjectFile = { name: string; language: string; content: string };
 
@@ -31,6 +31,8 @@ export default function CodeWorkspace() {
   const [preview, setPreview] = useState("");
   const [showNewFile, setShowNewFile] = useState(false);
   const [newFileName, setNewFileName] = useState("");
+  const [renaming, setRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
 
   const current = files.find(f => f.name === active) || files[0];
   const projectText = useMemo(() => files.map(f => `FILE: ${f.name}\n${f.content}`).join("\n\n---\n\n").slice(0, 60000), [files]);
@@ -61,6 +63,19 @@ export default function CodeWorkspace() {
     setActive(name);
     setNewFileName("");
     setShowNewFile(false);
+  }
+
+  function startRename() {
+    setRenameValue(active);
+    setRenaming(true);
+  }
+
+  function confirmRename() {
+    const next = renameValue.trim();
+    if (!next || next === active || files.some(f => f.name === next)) return;
+    setFiles(prev => prev.map(f => f.name === active ? { ...f, name: next, language: languageFor(next) } : f));
+    setActive(next);
+    setRenaming(false);
   }
 
   function deleteCurrent() {
@@ -127,10 +142,20 @@ export default function CodeWorkspace() {
       <aside className="hidden border-r border-white/10 bg-[#09090d] p-3 lg:block">
         <div className="mb-2 flex items-center justify-between"><p className="px-2 py-2 text-[10px] font-bold uppercase tracking-widest text-white/25">Project files</p><button onClick={() => setShowNewFile(true)} className="rounded-lg p-1.5 text-white/40 hover:bg-white/5 hover:text-white"><FilePlus2 size={15}/></button></div>
         {files.map(file => <button key={file.name} onClick={() => setActive(file.name)} className={`mb-1 flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs ${file.name === active ? "bg-violet-500/10 text-white" : "text-white/45 hover:bg-white/5 hover:text-white"}`}><FileCode2 size={14}/>{file.name}</button>)}
-        <button onClick={deleteCurrent} disabled={files.length === 1} className="mt-4 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs text-red-300/50 hover:bg-red-500/10 disabled:opacity-20"><Trash2 size={14}/> Delete active file</button>
+        <div className="mt-4 grid grid-cols-2 gap-1.5">
+          <button onClick={startRename} className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 px-2 py-2 text-[10px] text-white/45 hover:bg-white/5 hover:text-white"><Pencil size={12}/> Rename</button>
+          <button onClick={deleteCurrent} disabled={files.length === 1} className="flex items-center justify-center gap-1.5 rounded-xl border border-red-400/10 px-2 py-2 text-[10px] text-red-300/50 hover:bg-red-500/10 disabled:opacity-20"><Trash2 size={12}/> Delete</button>
+        </div>
       </aside>
 
       <section className="flex min-h-[620px] min-w-0 flex-col">
+        <div className="flex items-center gap-2 border-b border-white/10 bg-white/[.025] px-3 py-2 lg:hidden">
+          <select value={active} onChange={e => setActive(e.target.value)} className="min-w-0 flex-1 rounded-xl border border-white/10 bg-[#101017] px-3 py-2 text-xs text-white outline-none">
+            {files.map(file => <option key={file.name} value={file.name}>{file.name}</option>)}
+          </select>
+          <button onClick={() => setShowNewFile(true)} className="rounded-xl border border-white/10 p-2 text-white/50"><FilePlus2 size={15}/></button>
+          <button onClick={startRename} className="rounded-xl border border-white/10 p-2 text-white/50"><Pencil size={15}/></button>
+        </div>
         <div className="flex items-center justify-between border-b border-white/10 bg-white/[.025] px-4 py-2 text-xs text-white/45"><span>{current.name} <span className="ml-2 text-white/20">{current.language}</span></span><span className="text-white/20">{files.length} files</span></div>
         <textarea value={current.content} onChange={e => updateCurrent(e.target.value)} spellCheck={false} className="min-h-[620px] flex-1 resize-none bg-[#050507] p-4 font-mono text-[13px] leading-6 text-cyan-100 outline-none md:p-5" />
       </section>
@@ -145,6 +170,8 @@ export default function CodeWorkspace() {
     </div>
 
     {showNewFile && <div className="fixed inset-0 z-40 grid place-items-center bg-black/70 p-4 backdrop-blur-sm"><div className="w-full max-w-sm rounded-3xl border border-white/10 bg-[#101017] p-5 shadow-2xl"><div className="mb-4 flex items-center justify-between"><b>New project file</b><button onClick={() => setShowNewFile(false)} className="rounded-lg p-2 text-white/40 hover:bg-white/5"><X size={16}/></button></div><input autoFocus value={newFileName} onChange={e => setNewFileName(e.target.value)} onKeyDown={e => e.key === "Enter" && addFile()} placeholder="components/Button.tsx" className="w-full rounded-xl border border-white/10 bg-black/30 p-3 text-sm outline-none placeholder:text-white/20"/><button onClick={addFile} className="mt-3 w-full rounded-xl bg-white py-3 text-xs font-bold text-black">Create file</button></div></div>}
+
+    {renaming && <div className="fixed inset-0 z-40 grid place-items-center bg-black/70 p-4 backdrop-blur-sm"><div className="w-full max-w-sm rounded-3xl border border-white/10 bg-[#101017] p-5 shadow-2xl"><div className="mb-4 flex items-center justify-between"><b>Rename file</b><button onClick={() => setRenaming(false)} className="rounded-lg p-2 text-white/40 hover:bg-white/5"><X size={16}/></button></div><input autoFocus value={renameValue} onChange={e => setRenameValue(e.target.value)} onKeyDown={e => e.key === "Enter" && confirmRename()} className="w-full rounded-xl border border-white/10 bg-black/30 p-3 text-sm outline-none"/><button onClick={confirmRename} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-white py-3 text-xs font-bold text-black"><Check size={14}/> Rename file</button></div></div>}
 
     {running && <div className="fixed inset-0 z-30 bg-black/80 p-3 backdrop-blur-sm md:p-8"><div className="mx-auto flex h-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#101017] shadow-2xl"><div className="flex items-center justify-between border-b border-white/10 px-4 py-3"><div className="flex items-center gap-2 text-xs font-bold"><Play size={14}/> Live Preview</div><button onClick={() => setRunning(false)} className="rounded-xl p-2 text-white/50 hover:bg-white/5"><X size={16}/></button></div><iframe title="CreateX live preview" sandbox="allow-scripts" srcDoc={preview} className="min-h-0 flex-1 bg-white" /></div></div>}
   </main>;
