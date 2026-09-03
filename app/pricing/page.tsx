@@ -7,11 +7,12 @@ import { ArrowRight, Check, Sparkles, Zap, Loader2 } from "lucide-react";
 
 declare global { interface Window { Razorpay?: any } }
 
-const packs = [
+type Pack = { code: string; name: string; credits: number; price: string; note: string; popular?: boolean };
+const packs: Pack[] = [
   { code: "starter", name: "Starter", credits: 50, price: "₹99", note: "For trying CreateX AI" },
   { code: "creator", name: "Creator", credits: 150, price: "₹249", note: "Best for regular creators", popular: true },
   { code: "pro", name: "Pro", credits: 400, price: "₹599", note: "For heavy creative work" },
-] as const;
+];
 
 export default function PricingPage() {
   const [loading, setLoading] = useState("");
