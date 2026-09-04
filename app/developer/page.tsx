@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowLeft, ArrowUpRight, Mail, Sparkles } from "lucide-react";
 
