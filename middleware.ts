@@ -10,7 +10,8 @@ export async function middleware(request: NextRequest) {
     path === "/chat" || path.startsWith("/chat/") ||
     path === "/create" || path.startsWith("/create/") ||
     path === "/code" || path.startsWith("/code/") ||
-    path === "/creations" || path.startsWith("/creations/");
+    path === "/creations" || path.startsWith("/creations/") ||
+    path === "/admin" || path.startsWith("/admin/");
 
   if (!supabaseUrl || !supabaseKey) {
     if (protectedPath) {
@@ -51,5 +52,13 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/chat/:path*", "/create/:path*", "/code/:path*", "/creations/:path*", "/auth/:path*"],
+  matcher: [
+    "/dashboard/:path*",
+    "/chat/:path*",
+    "/create/:path*",
+    "/code/:path*",
+    "/creations/:path*",
+    "/admin/:path*",
+    "/auth/:path*",
+  ],
 };
