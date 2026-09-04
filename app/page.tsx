@@ -13,10 +13,10 @@ export default function Home(){
   <header className="cx-topbar">
    <Link href="/" className="cx-brand"><img src="/createx-logo.svg" alt="CreateX AI"/><span>CreateX <b>AI</b></span></Link>
    <nav className="cx-nav"><Link href="/create">Create</Link><Link href="/chat">Chat</Link><Link href="/creations">Creations</Link><Link href="/developer">Developer</Link></nav>
-   <div className="cx-actions"><Link href="/auth?mode=signin" className="cx-ghost">Sign in</Link><Link href="/auth?mode=signup" className="cx-button">Get started <ArrowUpRight size={14}/></Link></div>
+   <div className="cx-actions"><Link href="/auth?mode=signin" className="cx-ghost">Login</Link><Link href="/auth?mode=signup" className="cx-button">Sign up <ArrowUpRight size={14}/></Link></div>
    <button className="cx-menu" onClick={()=>setMenu(!menu)} aria-label="Menu">{menu?<X size={18}/>:<Menu size={18}/>}</button>
   </header>
-  {menu&&<div className="cx-mobile-menu"><Link onClick={()=>setMenu(false)} href="/create">Create</Link><Link onClick={()=>setMenu(false)} href="/chat">AI Chat</Link><Link onClick={()=>setMenu(false)} href="/creations">Creations</Link><Link onClick={()=>setMenu(false)} href="/developer">Developer</Link><Link onClick={()=>setMenu(false)} href="/auth?mode=signup">Get started</Link></div>}
+  {menu&&<div className="cx-mobile-menu"><Link onClick={()=>setMenu(false)} href="/create">Create</Link><Link onClick={()=>setMenu(false)} href="/chat">AI Chat</Link><Link onClick={()=>setMenu(false)} href="/creations">Creations</Link><Link onClick={()=>setMenu(false)} href="/developer">Developer</Link><Link onClick={()=>setMenu(false)} href="/auth?mode=signin">Login</Link><Link onClick={()=>setMenu(false)} href="/auth?mode=signup">Sign up</Link></div>}
 
   <section className="cx-hero">
    <div className="cx-hero-copy">
