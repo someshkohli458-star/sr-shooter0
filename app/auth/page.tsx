@@ -1,18 +1,217 @@
 "use client";
+
 import Link from "next/link";
-import { useEffect,useState } from "react";
-import { ArrowRight,Eye,EyeOff,LockKeyhole,Mail,ShieldCheck,UserRound } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-export default function AuthPage(){
- const [signup,setSignup]=useState(false),[show,setShow]=useState(false),[name,setName]=useState(""),[email,setEmail]=useState(""),[password,setPassword]=useState(""),[message,setMessage]=useState(""),[loading,setLoading]=useState(false),[forgot,setForgot]=useState(false),[reset,setReset]=useState(false),[resetReady,setResetReady]=useState(false),[newPassword,setNewPassword]=useState(""),[confirmPassword,setConfirmPassword]=useState(""),[resend,setResend]=useState(false);
- const nextPath=typeof window!=="undefined"?(new URLSearchParams(window.location.search).get("next")||"/dashboard"):"/dashboard";
- useEffect(()=>{const mode=new URLSearchParams(location.search).get("mode");const error=new URLSearchParams(location.search).get("error");if(mode==="signup")setSignup(true);if(mode==="reset")setReset(true);if(error) setMessage(error==="verification_failed"?"That verification link is invalid or expired. Please request a new one.":"This verification link is incomplete. Please request a new one.");const supabase=createClient();const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{if(event==="PASSWORD_RECOVERY")setResetReady(true);if(session&&event==="SIGNED_IN"&&!reset)location.href=nextPath});supabase.auth.getSession().then(({data})=>{if(data.session&&!reset)location.href=nextPath;if(data.session&&reset)setResetReady(true)});return()=>subscription.unsubscribe()},[reset,nextPath]);
- async function submit(e:React.FormEvent){e.preventDefault();setLoading(true);setMessage("");const supabase=createClient();
-  if(reset){if(newPassword.length<6){setMessage("Password must be at least 6 characters.");setLoading(false);return}if(newPassword!==confirmPassword){setMessage("Passwords do not match.");setLoading(false);return}const {error}=await supabase.auth.updateUser({password:newPassword});setMessage(error?error.message:"Password updated successfully. You can now continue to your dashboard.");if(!error){setNewPassword("");setConfirmPassword("");setTimeout(()=>location.href="/dashboard",700)}setLoading(false);return}
-  if(forgot){const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:`${window.location.origin}/auth?mode=reset`});setMessage(error?error.message:"If an account exists for this email, a secure password reset link has been sent.");setLoading(false);return}
-  if(signup){const {error}=await supabase.auth.signUp({email,password,options:{data:{full_name:name},emailRedirectTo:`${window.location.origin}/auth/confirm?next=/dashboard`}});if(error)setMessage(error.message);else{setMessage("Account created. Check your email and click the verification link before signing in.");setResend(true)}}
-  else{const {error}=await supabase.auth.signInWithPassword({email,password});if(error){setMessage(error.message.toLowerCase().includes("email not confirmed")?"Please verify your email first. You can resend the verification email below.":error.message);if(error.message.toLowerCase().includes("email not confirmed"))setResend(true)}else location.href=nextPath}setLoading(false)}
- async function resendVerification(){setLoading(true);const supabase=createClient();const {error}=await supabase.auth.resend({type:"signup",email});setMessage(error?error.message:"A new verification email has been sent.");setLoading(false)}
- return <main className="cx-auth"><style jsx global>{`body{background:#050507}.cx-auth{min-height:100vh;position:relative;overflow:hidden;background:#050507;color:#fff}.cx-auth-bg{position:absolute;inset:0;background:radial-gradient(circle at 15% 20%,rgba(139,92,246,.2),transparent 30%),radial-gradient(circle at 85% 20%,rgba(34,211,238,.12),transparent 27%),radial-gradient(circle at 50% 100%,rgba(217,70,239,.08),transparent 30%)}.cx-auth-nav{height:76px;position:relative;z-index:2;max-width:1180px;margin:auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.06)}.cx-brand{display:flex;align-items:center;gap:10px;font-weight:900;letter-spacing:-.04em}.cx-brand img{width:36px}.cx-brand span{font-size:17px}.cx-brand b{color:#c4b5fd}.cx-auth-dev{font-size:10px;color:rgba(255,255,255,.38)}.cx-auth-grid{position:relative;z-index:1;max-width:1050px;margin:auto;min-height:calc(100vh - 76px);padding:60px 24px;display:grid;grid-template-columns:1fr 430px;align-items:center;gap:80px}.cx-live{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(155,124,255,.2);background:rgba(155,124,255,.06);padding:8px 11px;border-radius:999px;font-size:9px;font-weight:800;letter-spacing:.18em;color:#c4b5fd}.cx-live i{width:6px;height:6px;border-radius:50%;background:#6ee7b7;box-shadow:0 0 12px #6ee7b7}.cx-auth-story h1{font-size:clamp(64px,7vw,105px);line-height:.86;letter-spacing:-.08em;margin:25px 0}.cx-auth-story h1 span{background:linear-gradient(100deg,#fff,#c4b5fd,#67e8f9);-webkit-background-clip:text;color:transparent}.cx-auth-story p{max-width:500px;color:rgba(255,255,255,.4);font-size:15px;line-height:1.8}.cx-auth-stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:25px}.cx-auth-stats span{border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.025);padding:9px 11px;border-radius:12px;color:rgba(255,255,255,.35);font-size:9px;text-transform:uppercase;letter-spacing:.1em}.cx-auth-stats b{color:#fff;margin-right:4px}.cx-auth-card{border:1px solid rgba(255,255,255,.11);background:rgba(12,12,17,.8);border-radius:28px;padding:30px;box-shadow:0 35px 100px rgba(0,0,0,.45);backdrop-filter:blur(24px)}.cx-auth-kicker{font-size:9px;letter-spacing:.22em;color:#c4b5fd;font-weight:900}.cx-auth-card h2{font-size:31px;letter-spacing:-.05em;margin:9px 0 5px}.cx-auth-card p{margin:0;color:rgba(255,255,255,.35);font-size:12px}.cx-auth-card form{display:grid;gap:10px;margin-top:25px}.cx-auth-card label{height:52px;display:flex;align-items:center;gap:10px;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.025);border-radius:14px;padding:0 14px;color:rgba(255,255,255,.28)}.cx-auth-card label:focus-within{border-color:rgba(155,124,255,.5)}.cx-auth-card input{width:100%;border:0;outline:0;background:transparent;color:#fff;font-size:12px}.cx-auth-card input::placeholder{color:rgba(255,255,255,.22)}.cx-auth-card label button{border:0;background:transparent;color:rgba(255,255,255,.28);padding:4px}.cx-auth-submit{height:52px;border:0;border-radius:14px;background:#fff;color:#050507;margin-top:4px;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:8px}.cx-auth-submit:disabled{opacity:.55}.cx-auth-message{margin-top:12px;border:1px solid rgba(139,92,246,.22);background:rgba(139,92,246,.07);border-radius:13px;padding:11px;font-size:10px;line-height:1.6;color:rgba(255,255,255,.7)}.cx-auth-switch{text-align:center;margin-top:20px;font-size:10px;color:rgba(255,255,255,.3)}.cx-auth-switch button,.cx-forgot button{border:0;background:transparent;color:#c4b5fd;font-weight:800}.cx-forgot{text-align:right;margin-top:-2px}.cx-forgot button{font-size:9px}.cx-resend{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:10px;border:1px solid rgba(110,231,183,.16);background:rgba(110,231,183,.05);color:#a7f3d0;border-radius:12px;padding:9px;font-size:9px}.cx-auth-note{text-align:center;margin-top:18px;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.18)}@media(max-width:850px){.cx-auth-grid{grid-template-columns:1fr;gap:30px;padding-top:45px}.cx-auth-story{text-align:center}.cx-auth-story p{margin:auto}.cx-auth-stats{justify-content:center}.cx-auth-card{max-width:520px;width:100%;margin:auto}}@media(max-width:520px){.cx-auth-nav{padding:0 16px}.cx-auth-dev{display:none}.cx-auth-grid{padding:35px 16px}.cx-auth-story h1{font-size:64px}.cx-auth-card{padding:22px;border-radius:22px}}`}</style><div className="cx-auth-bg"/><header className="cx-auth-nav"><Link href="/" className="cx-brand"><img src="/createx-logo.svg" alt=""/><span>CreateX <b>AI</b></span></Link><Link href="/developer" className="cx-auth-dev">Built by Somesh Koli</Link></header><div className="cx-auth-grid"><section className="cx-auth-story"><div className="cx-live"><i/> YOUR CREATIVE WORKSPACE</div><h1>{reset?<>Create a<br/><span>new password.</span></>:forgot?<>Reset your<br/><span>password.</span>:<>Make the<br/><span>next thing.</span></>}</h1><p>{reset?"Choose a new password for your CreateX AI account.":forgot?"Enter your email and we'll send you a secure password reset link.":"Sign in or create your free account to generate, chat, code and keep your work in one place."}</p>{!forgot&&!reset&&<div className="cx-auth-stats"><span><b>10</b> images / day</span><span><b>10</b> videos / day</span><span><b>∞</b> chat</span></div>}</section><section className="cx-auth-card"><div><span className="cx-auth-kicker">{reset?"PASSWORD UPDATE":forgot?"PASSWORD RECOVERY":signup?"NEW ACCOUNT":"WELCOME BACK"}</span><h2>{reset?"Set a new password.":forgot?"Forgot password?":signup?"Start creating.":"Continue creating."}</h2><p>{reset?"Your new password will secure this account.":forgot?"We'll help you get back into CreateX AI.":signup?"Verify your email to activate your workspace.":"Access your studio and private creations."}</p></div><form onSubmit={submit}>{signup&&!forgot&&!reset&&<label><UserRound size={16}/><input required value={name} onChange={e=>setName(e.target.value)} placeholder="Your name"/></label>}{!reset&&<label><Mail size={16}/><input required type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email address"/></label>}{reset?<><label><LockKeyhole size={16}/><input required minLength={6} type={show?"text":"password"} value={newPassword} onChange={e=>setNewPassword(e.target.value)} placeholder="New password"/><button type="button" onClick={()=>setShow(!show)}>{show?<EyeOff size={16}/>:<Eye size={16}/>}</button></label><label><ShieldCheck size={16}/><input required minLength={6} type="password" value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} placeholder="Confirm new password"/></label></>:!forgot&&<><label><LockKeyhole size={16}/><input required minLength={6} type={show?"text":"password"} value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password"/><button type="button" onClick={()=>setShow(!show)}>{show?<EyeOff size={16}/>:<Eye size={16}/>}</button></label>{!signup&&<div className="cx-forgot"><button type="button" onClick={()=>{setForgot(true);setMessage("")}}>Forgot password?</button></div>}</>}<button className="cx-auth-submit" disabled={loading}>{loading?"Please wait…":reset?"Update password":forgot?"Send reset link":signup?"Create account":"Sign in"}<ArrowRight size={16}/></button></form>{message&&<div className="cx-auth-message">{message}</div>}{resend&&!reset&&!forgot&&<button className="cx-resend" onClick={resendVerification} disabled={loading}><Mail size={13}/> Resend verification email</button>}<div className="cx-auth-switch">{reset||forgot?<button onClick={()=>{setReset(false);setForgot(false);setMessage("")}}>Back to sign in</button>:<>{signup?"Already have an account?":"New to CreateX AI?"} <button onClick={()=>{setSignup(!signup);setMessage("")}}>{signup?"Sign in":"Create account"}</button></>}</div><div className="cx-auth-note">Free access · no credits · secure email authentication</div></section></div></main>;
+function safeNext(value: string | null) {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/dashboard";
+  return value;
+}
+
+export default function AuthPage() {
+  const [signup, setSignup] = useState(false);
+  const [show, setShow] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [forgot, setForgot] = useState(false);
+  const [reset, setReset] = useState(false);
+  const [resend, setResend] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get("mode");
+    const error = params.get("error");
+    if (mode === "signup") setSignup(true);
+    if (mode === "reset") setReset(true);
+    if (error === "verification_failed") setMessage("That verification link is invalid or expired. Please request a new one.");
+
+    const supabase = createClient();
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") setReset(true);
+      if (session && event === "SIGNED_IN" && !reset) {
+        window.location.replace(safeNext(params.get("next")));
+      }
+    });
+
+    supabase.auth.getSession().then(({ data: sessionData }) => {
+      if (sessionData.session && !reset) window.location.replace(safeNext(params.get("next")));
+    });
+
+    return () => data.subscription.unsubscribe();
+  }, [reset]);
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setMessage("");
+    setResend(false);
+    const supabase = createClient();
+
+    try {
+      if (reset) {
+        if (newPassword.length < 6) throw new Error("Password must be at least 6 characters.");
+        if (newPassword !== confirmPassword) throw new Error("Passwords do not match.");
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        if (error) throw error;
+        setMessage("Password updated successfully. Redirecting to your dashboard…");
+        window.setTimeout(() => window.location.replace("/dashboard"), 700);
+        return;
+      }
+
+      if (forgot) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth?mode=reset`,
+        });
+        if (error) throw error;
+        setMessage("If an account exists for this email, a secure password reset link has been sent.");
+        return;
+      }
+
+      if (signup) {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { full_name: name.trim() },
+            emailRedirectTo: `${window.location.origin}/auth/confirm?next=/dashboard`,
+          },
+        });
+        if (error) throw error;
+        setMessage("Account created. Check your email and click the verification link before signing in.");
+        setResend(true);
+        return;
+      }
+
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        const unverified = error.message.toLowerCase().includes("email not confirmed");
+        setResend(unverified);
+        throw new Error(unverified ? "Please verify your email first. You can resend the verification email below." : error.message);
+      }
+      window.location.replace(safeNext(new URLSearchParams(window.location.search).get("next")));
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function resendVerification() {
+    setLoading(true);
+    const supabase = createClient();
+    const { error } = await supabase.auth.resend({ type: "signup", email });
+    setMessage(error ? error.message : "A new verification email has been sent.");
+    setLoading(false);
+  }
+
+  const title = reset ? "Create a new password." : forgot ? "Reset your password." : signup ? "Start creating." : "Welcome back.";
+  const subtitle = reset
+    ? "Choose a new password for your CreateX AI account."
+    : forgot
+      ? "Enter your email and we’ll send a secure reset link."
+      : signup
+        ? "Create your free workspace and verify your email to continue."
+        : "Sign in to continue to your chats, creations and workspace.";
+
+  return (
+    <main className="min-h-screen bg-[#050509] text-white">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(139,92,246,.14),transparent_30%),radial-gradient(circle_at_85%_20%,rgba(34,211,238,.08),transparent_25%)]" />
+      <header className="relative z-10 border-b border-white/10">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 md:px-6">
+          <Link href="/" className="flex items-center gap-2.5">
+            <img src="/createx-logo.svg" alt="CreateX AI" className="h-8 w-8" />
+            <span className="font-semibold tracking-tight">CreateX <span className="text-violet-300">AI</span></span>
+          </Link>
+          <Link href="/developer" className="text-xs text-white/35 hover:text-white">About developer</Link>
+        </div>
+      </header>
+
+      <div className="relative z-10 mx-auto grid min-h-[calc(100vh-64px)] max-w-6xl items-center gap-12 px-4 py-10 md:grid-cols-[1fr_420px] md:px-6 lg:gap-20">
+        <section className="hidden md:block">
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[.03] px-3 py-1.5 text-[10px] font-medium uppercase tracking-[.18em] text-white/45">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> AI workspace
+          </div>
+          <h1 className="max-w-xl text-6xl font-semibold leading-[.94] tracking-[-.06em] lg:text-7xl">
+            Think. Create.<br /><span className="text-white/35">Build with AI.</span>
+          </h1>
+          <p className="mt-6 max-w-lg text-sm leading-7 text-white/40">
+            One focused workspace for conversations, code, files, images and creative work.
+          </p>
+          <div className="mt-7 flex flex-wrap gap-2 text-[11px] text-white/45">
+            <span className="rounded-full border border-white/10 px-3 py-2">10 images / day</span>
+            <span className="rounded-full border border-white/10 px-3 py-2">10 videos / day</span>
+            <span className="rounded-full border border-white/10 px-3 py-2">Unlimited chat</span>
+          </div>
+        </section>
+
+        <section className="w-full rounded-3xl border border-white/10 bg-[#0b0b10]/90 p-5 shadow-2xl shadow-black/40 backdrop-blur-xl md:p-7">
+          <div className="mb-6">
+            <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-violet-300/80">{reset ? "Password recovery" : forgot ? "Account recovery" : signup ? "Create account" : "Sign in"}</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-.04em]">{title}</h2>
+            <p className="mt-2 text-xs leading-5 text-white/35">{subtitle}</p>
+          </div>
+
+          <form onSubmit={submit} className="space-y-3">
+            {signup && !forgot && !reset && (
+              <label className="flex h-12 items-center gap-3 rounded-2xl border border-white/10 bg-white/[.035] px-4 focus-within:border-violet-400/40">
+                <UserRound size={16} className="text-white/30" />
+                <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-white/20" />
+              </label>
+            )}
+
+            {!reset && (
+              <label className="flex h-12 items-center gap-3 rounded-2xl border border-white/10 bg-white/[.035] px-4 focus-within:border-violet-400/40">
+                <Mail size={16} className="text-white/30" />
+                <input required type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email address" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-white/20" />
+              </label>
+            )}
+
+            {reset ? (
+              <>
+                <label className="flex h-12 items-center gap-3 rounded-2xl border border-white/10 bg-white/[.035] px-4 focus-within:border-violet-400/40">
+                  <LockKeyhole size={16} className="text-white/30" />
+                  <input required minLength={6} type={show ? "text" : "password"} autoComplete="new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-white/20" />
+                  <button type="button" onClick={() => setShow((v) => !v)} className="text-white/30 hover:text-white">{show ? <EyeOff size={16} /> : <Eye size={16} />}</button>
+                </label>
+                <label className="flex h-12 items-center gap-3 rounded-2xl border border-white/10 bg-white/[.035] px-4 focus-within:border-violet-400/40">
+                  <ShieldCheck size={16} className="text-white/30" />
+                  <input required minLength={6} type="password" autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm password" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-white/20" />
+                </label>
+              </>
+            ) : !forgot && (
+              <label className="flex h-12 items-center gap-3 rounded-2xl border border-white/10 bg-white/[.035] px-4 focus-within:border-violet-400/40">
+                <LockKeyhole size={16} className="text-white/30" />
+                <input required minLength={6} type={show ? "text" : "password"} autoComplete={signup ? "new-password" : "current-password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-white/20" />
+                <button type="button" onClick={() => setShow((v) => !v)} className="text-white/30 hover:text-white">{show ? <EyeOff size={16} /> : <Eye size={16} />}</button>
+              </label>
+            )}
+
+            {!signup && !forgot && !reset && (
+              <div className="text-right"><button type="button" onClick={() => setForgot(true)} className="text-[11px] text-violet-300 hover:text-violet-200">Forgot password?</button></div>
+            )}
+
+            <button disabled={loading} className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-white text-sm font-semibold text-black transition hover:bg-white/90 disabled:opacity-50">
+              {loading ? "Please wait…" : reset ? "Update password" : forgot ? "Send reset link" : signup ? "Create account" : "Sign in"}
+              <ArrowRight size={16} />
+            </button>
+          </form>
+
+          {message && <div className="mt-4 rounded-2xl border border-violet-400/15 bg-violet-400/[.06] p-3 text-xs leading-5 text-white/70">{message}</div>}
+          {resend && !reset && !forgot && <button type="button" onClick={resendVerification} disabled={loading} className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-emerald-300/15 bg-emerald-300/[.04] px-3 py-2.5 text-xs text-emerald-200"> <Mail size={14} /> Resend verification email</button>}
+
+          <div className="mt-6 text-center text-xs text-white/30">
+            {reset || forgot ? <button type="button" onClick={() => { setReset(false); setForgot(false); setMessage(""); }} className="text-violet-300 hover:text-violet-200">Back to sign in</button> : <> {signup ? "Already have an account?" : "New to CreateX AI?"} <button type="button" onClick={() => { setSignup((v) => !v); setMessage(""); }} className="font-semibold text-violet-300 hover:text-violet-200">{signup ? "Sign in" : "Create account"}</button></>}
+          </div>
+          <p className="mt-5 text-center text-[10px] text-white/15">Secure email authentication · Free access · No credits</p>
+        </section>
+      </div>
+    </main>
+  );
 }
