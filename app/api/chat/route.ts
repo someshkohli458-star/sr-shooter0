@@ -27,6 +27,19 @@ async function getUser() {
   return { supabase, user };
 }
 
+function providerError(responseStatus: number, rawMessage: unknown) {
+  const message = String(rawMessage || "AI request failed.");
+  const lower = message.toLowerCase();
+  if (responseStatus === 401 || /incorrect api key|invalid api key|api key/i.test(message)) {
+    return { error: "AI service is not configured correctly. Please ask the administrator to update the OpenAI API key.", code: "AI_CONFIGURATION", status: 503 };
+  }
+  if (responseStatus === 429 || /billing|quota|insufficient_quota|hard limit|credits|spend limit|rate limit/i.test(lower)) {
+    return { error: "AI service is temporarily unavailable because the OpenAI API usage or billing limit has been reached. Please try again later.", code: "AI_BILLING_LIMIT", status: 503 };
+  }
+  if (responseStatus >= 500) return { error: "AI service is temporarily unavailable. Please try again in a moment.", code: "AI_PROVIDER_UNAVAILABLE", status: 502 };
+  return { error: message, code: "AI_REQUEST_FAILED", status: 502 };
+}
+
 export async function GET(request: Request) {
   const { supabase, user } = await getUser();
   if (!user) return NextResponse.json({ error: "Please sign in first." }, { status: 401 });
@@ -69,7 +82,7 @@ export async function DELETE(request: Request) {
 export async function POST(request: Request) {
   const { supabase, user } = await getUser();
   if (!user) return NextResponse.json({ error: "Please sign in first." }, { status: 401 });
-  if (!process.env.OPENAI_API_KEY) return NextResponse.json({ error: "AI is not configured yet. Add OPENAI_API_KEY in Vercel." }, { status: 503 });
+  if (!process.env.OPENAI_API_KEY) return NextResponse.json({ error: "AI is not configured yet. Add OPENAI_API_KEY in Vercel.", code: "AI_CONFIGURATION" }, { status: 503 });
 
   const form = await request.formData();
   const message = String(form.get("message") || "").trim().slice(0, 12000);
@@ -111,7 +124,7 @@ export async function POST(request: Request) {
       const upload = new FormData(); upload.append("purpose", "user_data"); upload.append("file", file, file.name);
       const up = await fetch("https://api.openai.com/v1/files", { method: "POST", headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` }, body: upload });
       const upData = await up.json().catch(() => ({}));
-      if (!up.ok) return NextResponse.json({ error: upData?.error?.message || "Could not process this file." }, { status: 502 });
+      if (!up.ok) { const mapped = providerError(up.status, upData?.error?.message || "Could not process this file."); return NextResponse.json(mapped, { status: mapped.status }); }
       content.push({ type: "input_file", file_id: upData.id });
     }
   }
@@ -133,7 +146,10 @@ export async function POST(request: Request) {
     body: JSON.stringify({ model: MODEL, instructions, input, tools, tool_choice: "auto", include: ["web_search_call.action.sources", "code_interpreter_call.outputs"], max_output_tokens: 5000 }),
   });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) return NextResponse.json({ error: data?.error?.message || "AI request failed." }, { status: response.status >= 500 ? 502 : 400 });
+  if (!response.ok) {
+    const mapped = providerError(response.status, data?.error?.message);
+    return NextResponse.json(mapped, { status: mapped.status });
+  }
   const text = data?.output_text || data?.output?.flatMap((item: any) => item.content || []).filter((part: any) => part.type === "output_text").map((part: any) => part.text).join("\n") || "I couldn't generate a response.";
   const { error: assistantSaveError } = await supabase.from("createx_chat_messages").insert({ chat_id: chatId, user_id: user.id, role: "assistant", content: text });
   if (assistantSaveError) return NextResponse.json({ error: assistantSaveError.message }, { status: 500 });
