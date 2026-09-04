@@ -23,6 +23,19 @@ function dataUrlToFile(dataUrl: string): File {
   return new File([bytes], `reference.${ext}`, { type: mime });
 }
 
+function providerError(responseStatus: number, rawMessage: unknown) {
+  const message = String(rawMessage || "Generation provider failed.");
+  const lower = message.toLowerCase();
+  if (responseStatus === 401 || /incorrect api key|invalid api key|api key/i.test(message)) {
+    return { error: "AI service is not configured correctly. Please ask the administrator to update the OpenAI API key.", code: "AI_CONFIGURATION", status: 503 };
+  }
+  if (responseStatus === 429 || /billing|quota|insufficient_quota|hard limit|credits|spend limit|rate limit/i.test(lower)) {
+    return { error: "AI generation is temporarily unavailable because the OpenAI API usage or billing limit has been reached. Please try again later.", code: "AI_BILLING_LIMIT", status: 503 };
+  }
+  if (responseStatus >= 500) return { error: "AI generation is temporarily unavailable. Please try again in a moment.", code: "AI_PROVIDER_UNAVAILABLE", status: 502 };
+  return { error: message, code: "GENERATION_FAILED", status: 502 };
+}
+
 export async function POST(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -47,7 +60,8 @@ export async function POST(request: Request) {
   const { data: usage, error: usageError } = await supabase.rpc("consume_createx_daily_generation", { p_user_id: user.id, p_type: type });
   if (usageError) {
     const message = usageError.message || "Daily generation limit reached";
-    return NextResponse.json({ error: message.includes("limit reached") ? `Daily ${type} limit reached. You can generate up to 10 ${type}s per day.` : message, code: "DAILY_LIMIT_REACHED" }, { status: 429 });
+    const isLimit = /limit reached/i.test(message);
+    return NextResponse.json({ error: isLimit ? `Daily ${type} limit reached. You can generate up to 10 ${type}s per day.` : message, code: isLimit ? "DAILY_LIMIT_REACHED" : "USAGE_SERVICE_ERROR" }, { status: isLimit ? 429 : 500 });
   }
 
   const { data: generation, error: insertError } = await supabase.from("createx_generations").insert({ user_id: user.id, type, prompt, settings, status: "pending" }).select("id,type,prompt,status,settings,created_at").single();
@@ -60,7 +74,7 @@ export async function POST(request: Request) {
   if (!apiKey) {
     await refundDaily(supabase, user.id, type);
     await supabase.from("createx_generations").update({ status: "failed" }).eq("id", generation.id).eq("user_id", user.id);
-    return NextResponse.json({ error: "OPENAI_API_KEY is not configured" }, { status: 503 });
+    return NextResponse.json({ error: "AI service is not configured yet. Please ask the administrator to add OPENAI_API_KEY.", code: "AI_CONFIGURATION" }, { status: 503 });
   }
 
   try {
@@ -72,7 +86,7 @@ export async function POST(request: Request) {
       form.append("size", videoSize(aspect));
       const response = await fetch("https://api.openai.com/v1/videos", { method: "POST", headers: { Authorization: `Bearer ${apiKey}` }, body: form });
       const result = await response.json().catch(() => ({}));
-      if (!response.ok || !result?.id) throw new Error(result?.error?.message || "Video provider failed");
+      if (!response.ok || !result?.id) { const mapped = providerError(response.status, result?.error?.message || result?.error); throw Object.assign(new Error(mapped.error), { mapped }); }
       const nextSettings = { ...settings, provider: "openai", provider_model: result.model || process.env.OPENAI_VIDEO_MODEL || "sora-2", provider_id: result.id, provider_status: result.status || "queued", daily_usage: usage };
       const { data: updated, error } = await supabase.from("createx_generations").update({ settings: nextSettings, updated_at: new Date().toISOString() }).eq("id", generation.id).eq("user_id", user.id).select("id,type,prompt,status,settings,created_at,updated_at").single();
       if (error) throw error;
@@ -90,7 +104,7 @@ export async function POST(request: Request) {
 
     const result = await response.json().catch(() => ({}));
     const b64 = result?.data?.[0]?.b64_json;
-    if (!response.ok || !b64) throw new Error(result?.error?.message || "Image provider failed");
+    if (!response.ok || !b64) { const mapped = providerError(response.status, result?.error?.message || result?.error); throw Object.assign(new Error(mapped.error), { mapped }); }
     const bytes = Buffer.from(b64, "base64");
     const storagePath = `${user.id}/${generation.id}.png`;
     const { error: uploadError } = await supabase.storage.from("createx-generations").upload(storagePath, bytes, { contentType: "image/png", upsert: true });
@@ -98,9 +112,10 @@ export async function POST(request: Request) {
     const { data: completed, error: updateError } = await supabase.from("createx_generations").update({ status: "completed", result_path: storagePath, result_url: null, settings: { ...settings, daily_usage: usage }, updated_at: new Date().toISOString() }).eq("id", generation.id).eq("user_id", user.id).select("id,type,prompt,status,result_path,settings,created_at,updated_at").single();
     if (updateError) throw updateError;
     return NextResponse.json({ generation: completed, provider: "openai", usage });
-  } catch (error) {
+  } catch (error: any) {
     await refundDaily(supabase, user.id, type);
     await supabase.from("createx_generations").update({ status: "failed", updated_at: new Date().toISOString() }).eq("id", generation.id).eq("user_id", user.id);
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Generation request failed" }, { status: 502 });
+    if (error?.mapped) return NextResponse.json(error.mapped, { status: error.mapped.status });
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Generation request failed", code: "GENERATION_FAILED" }, { status: 502 });
   }
 }
