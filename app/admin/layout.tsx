@@ -5,7 +5,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) redirect("/auth?next=/admin");
+  if (!user) redirect("/admin/login?next=/admin");
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -18,7 +18,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const emailMatches = Boolean(configuredAdminEmail && user.email?.toLowerCase() === configuredAdminEmail);
   const isAdmin = role === "admin" || emailMatches;
 
-  if (!isAdmin) redirect("/dashboard");
+  if (!isAdmin) redirect("/admin/login?error=not_admin&next=/admin");
 
   return <>{children}</>;
 }
